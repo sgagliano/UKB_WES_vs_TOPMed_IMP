@@ -1,8 +1,8 @@
+from __future__ import division
 import argparse
 import pysam
 import numpy
 import gzip
-from __future__ import division
 
 argparser = argparse.ArgumentParser(description = 'Computes correlation between imputed dosages and "exact" genotypes.')
 argparser.add_argument('-i', '--imputed', metavar = 'file', dest = 'in_imputed_VCF', type = str, required = True, help = 'Input VCF/BCF with imputed genotypes.')
