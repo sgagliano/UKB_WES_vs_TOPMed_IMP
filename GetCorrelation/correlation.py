@@ -65,10 +65,18 @@ if __name__ == '__main__':
         elif not has_prefix and genotyped_chrom.startswith('chr'):
             genotyped_chrom = genotyped_chrom[3:]
 
+        use_ds = 'DS' in imputed_file.header.formats
+        if not use_ds:
+            print('No DS format meta information found. DS will not be used.')
+
         ofile.write(f'CHROM\tPOS\tREF\tALT\tN_GT\tIMP_AF\tGT_AF\tDOSE_AF\tIMP_R2\tGT_vs_GT\tGT_vs_DS\n'.encode())
 
         genotyped_cache = {}
         genotyped_cache_stop = 0
+        gt_vs_gt = 'nan'
+        gt_af = 'nan'
+        gt_vs_ds = 'nan'
+        dose_af = 'nan'
         for imputed_record in imputed_file.fetch(imputed_chrom, args.begin - 1, args.end):
             if imputed_record.pos < args.begin: # avoid overlapping indels which start before the region
                 continue
@@ -91,19 +99,24 @@ if __name__ == '__main__':
                     imputed_fmt = imputed_record.samples[sample]
                     real_gt_array.append(sum(genotyped_fmt['GT']))
                     imputed_gt_array.append(sum(imputed_fmt['GT']))
-                    imputed_ds_array.append(imputed_fmt['DS'])
+                    if use_ds:
+                        imputed_ds_array.append(imputed_fmt['DS'])
 
             imp_af = imputed_record.info.get('AF', '.')
             imp_r2 = imputed_record.info.get('R2', '.')
             n_gt = len(real_gt_array)
             if n_gt > 0:
                 gt_af = sum(real_gt_array) / (2 * len(real_gt_array))
-                dose_af = sum(imputed_ds_array) / (2 * len(imputed_ds_array))
+                if use_ds:
+                    dose_af = sum(imputed_ds_array) / (2 * len(imputed_ds_array))
             else:
                 gt_af = 'nan'
-                dose_af = 'nan'
+                if use_ds:
+                    dose_af = 'nan'
 
             gt_vs_gt = numpy.corrcoef(real_gt_array, imputed_gt_array)[0, 1]
-            gt_vs_ds = numpy.corrcoef(real_gt_array, imputed_ds_array)[0, 1]
+            if use_ds:
+                gt_vs_ds = numpy.corrcoef(real_gt_array, imputed_ds_array)[0, 1]
             ofile.write(f'{args.chromosome}\t{imputed_record.pos}\t{imputed_record.ref}\t{imputed_record.alts[0]}\t{n_gt}\t{imp_af}\t{gt_af}\t{dose_af}\t{imp_r2}\t{gt_vs_gt}\t{gt_vs_ds}\n'.encode())
+
     print('Done')
