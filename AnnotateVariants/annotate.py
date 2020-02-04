@@ -72,13 +72,14 @@ if __name__ == '__main__':
             fields = dict(zip(header, line.rstrip().split()))
             if has_chr_prefix and not fields['CHROM'].startswith('chr'):
                 chrom = 'chr' + fields['CHROM']
-                variant_name = f"chr{fields['CHROM']}_{fields['POS']}_{fields['REF']}_{fields['ALT']}"
+                variant_name = "chr{}_{}_{}_{}".format(fields['CHROM'], fields['POS'], fields['REF'], fields['ALT'])
             elif not has_chr_prefix and fields['CHROM'].startswith('chr'):
                 chrom = fields['CHROM'][3:]
-                variant_name = f"{fields['CHROM'][3:]}_{fields['POS']}_{fields['REF']}_{fields['ALT']}"
+                variant_name = "{}_{}_{}_{}".format(fields['CHROM'][3:], fields['POS'], fields['REF'], fields['ALT'])
             else:
                 chrom = fields['CHROM']
-                variant_name = f"{fields['CHROM']}_{fields['POS']}_{fields['REF']}_{fields['ALT']}"
+                variant_name = "{}_{}_{}_{}".format(fields['CHROM'], fields['POS'], fields['REF'], fields['ALT'])
+
 
             pos = int(fields['POS'])
 
