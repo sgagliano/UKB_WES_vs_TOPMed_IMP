@@ -15,13 +15,13 @@ argparser.add_argument('-o', '--output', metavar = 'file', dest = 'out_file', ty
 
 def cache_records(ifile, chrom, start, stop):
     cache = {}
-    print(f'Load into cache region {chrom}:{start}-{stop}')
+    print('Load into cache region {}:{}-{}'.format(chrom, start, stop))
     for record in ifile.fetch(chrom, start - 1, stop):
         if record.pos < start: # avoid indels which start before the region
             continue
         if len(record.alts) != 1:
             raise Exception('Multi-allelic entries are not supported.')
-        variant_name = f'{record.pos}_{record.ref}_{record.alts[0]}'
+        variant_name = '{}_{}_{}'.format(record.pos, record.ref, record.alts[0])
         cache[variant_name] = record
     return cache
 
@@ -37,11 +37,11 @@ if __name__ == '__main__':
             if sample:
                 samples.append(sample)
 
-    print(f'Loaded {len(samples)} sample(s).')
+    print('Loaded {} sample(s).'.format(len(samples)))
 
     with pysam.VariantFile(args.in_imputed_VCF, 'r') as imputed_file, pysam.VariantFile(args.in_genotyped_VCF, 'r') as genotyped_file, gzip.open(args.out_file, 'w') as ofile:
-        print(f'{len(imputed_file.header.samples)} sample(s) in {args.in_imputed_VCF}')
-        print(f'{len(genotyped_file.header.samples)} sample(s) in {args.in_genotyped_VCF}')
+        print('{} sample(s) in {}'.format(len(imputed_file.header.samples), args.in_imputed_VCF))
+        print('{} sample(s) in {}'.format(genotyped_file.header.samples, args.in_genotyped_VCF))
 
         imputed_file.subset_samples(samples)
         genotyped_file.subset_samples(samples)
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         if len(imputed_file.header.samples) != len(genotyped_file.header.samples):
             raise Exception('Different number of samples in input VCFs/BCFs.')
 
-        print(f'Subsetted {len(imputed_file.header.samples)} sample(s).')
+        print('Subsetted {} sample(s).'.format(len(imputed_file.header.samples)))
 
         imputed_chrom = args.chromosome
         has_prefix = list((imputed_file.header.contigs))[0].startswith('chr')
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         if not use_ds:
             print('No DS format meta information found. DS will not be used.')
 
-        ofile.write(f'CHROM\tPOS\tREF\tALT\tN_GT\tIMP_AF\tGT_AF\tDOSE_AF\tIMP_R2\tGT_vs_GT\tGT_vs_DS\n'.encode())
+        ofile.write('CHROM\tPOS\tREF\tALT\tN_GT\tIMP_AF\tGT_AF\tDOSE_AF\tIMP_R2\tGT_vs_GT\tGT_vs_DS\n'.encode())
 
         genotyped_cache = {}
         genotyped_cache_stop = 0
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         for imputed_record in imputed_file.fetch(imputed_chrom, args.begin - 1, args.end):
             if imputed_record.pos < args.begin: # avoid overlapping indels which start before the region
                 continue
-            variant_name = f'{imputed_record.pos}_{imputed_record.ref}_{imputed_record.alts[0]}' # imputed entries are always bi-allelic
+            variant_name = '{}_{}_{}'.format(imputed_record.pos, imputed_record.ref, imputed_record.alts[0]) # imputed entries are always bi-allelic
             if genotyped_cache_stop < imputed_record.pos:
                 genotyped_cache = cache_records(genotyped_file, genotyped_chrom, imputed_record.pos, imputed_record.pos + 100000)
                 genotyped_cache_stop = imputed_record.pos + 100000
@@ -117,6 +117,6 @@ if __name__ == '__main__':
             gt_vs_gt = numpy.corrcoef(real_gt_array, imputed_gt_array)[0, 1]
             if use_ds:
                 gt_vs_ds = numpy.corrcoef(real_gt_array, imputed_ds_array)[0, 1]
-            ofile.write(f'{args.chromosome}\t{imputed_record.pos}\t{imputed_record.ref}\t{imputed_record.alts[0]}\t{n_gt}\t{imp_af}\t{gt_af}\t{dose_af}\t{imp_r2}\t{gt_vs_gt}\t{gt_vs_ds}\n'.encode())
+            ofile.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(args.chromosome, imputed_record.pos, imputed_record.ref, imputed_record.alts[0], n_gt, imp_af, gt_af, dose_af, imp_r2, gt_vs_gt, gt_vs_ds).encode())
 
     print('Done')
